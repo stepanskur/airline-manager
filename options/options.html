@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>AirlineClub Co-Pilot — Options</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>AirlineClub Co-Pilot</h1>
+      <p>Open the extension via its toolbar icon — all settings and dashboards live in the popup.</p>
+    </header>
+    <p>Want a full-screen dashboard instead? Click below:</p>
+    <button id="openPopup">Open dashboard</button>
+  </div>
+  <script>
+    document.getElementById("openPopup").addEventListener("click", () => {
+      chrome.windows.create({ url: chrome.runtime.getURL("popup/popup.html"), type: "popup", width: 800, height: 640 });
+    });
+  </script>
+</body>
+</html>

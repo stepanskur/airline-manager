@@ -1,0 +1,73 @@
+{
+  "manifest_version": 3,
+  "name": "AirlineClub Co-Pilot",
+  "version": "0.4.1",
+  "description": "Power tools for airline-club.com — auto route finder, optimality scoring, oil & rival watch, profit dashboard, smart alerts.",
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "AirlineClub Co-Pilot",
+    "default_icon": {
+      "16": "assets/icon-16.png",
+      "32": "assets/icon-32.png",
+      "48": "assets/icon-48.png",
+      "128": "assets/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "assets/icon-16.png",
+    "32": "assets/icon-32.png",
+    "48": "assets/icon-48.png",
+    "128": "assets/icon-128.png"
+  },
+  "permissions": [
+    "storage",
+    "alarms",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://www.airline-club.com/*",
+    "https://v2.airline-club.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.airline-club.com/*",
+        "https://v2.airline-club.com/*"
+      ],
+      "js": ["content/bridge.js", "content/widget.js"],
+      "css": ["content/widget.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.airline-club.com/*",
+        "https://v2.airline-club.com/*"
+      ],
+      "js": ["content/page-probe.js"],
+      "run_at": "document_idle",
+      "world": "MAIN"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/icon-32.png",
+        "assets/icon-128.png",
+        "popup/popup.html",
+        "popup/popup.css",
+        "popup/popup.js",
+        "popup/icons.js",
+        "popup/sparkline.js"
+      ],
+      "matches": [
+        "https://www.airline-club.com/*",
+        "https://v2.airline-club.com/*"
+      ]
+    }
+  ],
+  "options_page": "options/options.html"
+}
