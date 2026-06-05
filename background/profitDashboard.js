@@ -73,9 +73,10 @@ export async function runProfitDashboard() {
       acc.revenue += r.revenue || 0;
       acc.capacity += r.capacity;
       acc.soldSeats += r.soldSeats;
+      acc.fuelCost += r.fuelCost || 0;
       return acc;
     },
-    { profit: 0, revenue: 0, capacity: 0, soldSeats: 0 },
+    { profit: 0, revenue: 0, capacity: 0, soldSeats: 0, fuelCost: 0 },
   );
   const snapshot = { rows, totals, updatedAt: Date.now() };
   await setKey(KEY, snapshot);

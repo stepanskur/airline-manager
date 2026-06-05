@@ -1,9 +1,8 @@
-/* widget.css — styles for the in-page floating Co-Pilot widget. */
+/* widget.css - Vercel Design System */
 
-#acp-widget,
-#acp-widget * {
+#acp-widget, #acp-widget * {
   box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, sans-serif;
+  font-family: "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 #acp-widget {
@@ -12,22 +11,24 @@
   right: 16px;
   z-index: 2147483646;
   width: 320px;
-  background: rgba(10, 10, 14, 0.96);
-  color: #f4f4f5;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(129, 140, 248, 0.08);
-  backdrop-filter: blur(10px);
-  font-size: 12px;
+  background: #000000;
+  color: #ededed;
+  border: 1px solid #333333;
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8);
+  font-size: 13px;
   overflow: hidden;
   user-select: none;
   display: flex;
   flex-direction: column;
+  transition: width 0.2s ease, height 0.2s ease;
 }
 
 #acp-widget[data-mode="full"] {
-  width: 780px;
+  width: 800px;
   height: 600px;
+  max-width: 90vw;
+  max-height: 85vh;
   resize: both;
   overflow: auto;
 }
@@ -37,250 +38,249 @@
 #acp-widget .acp-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 12px;
-  background: linear-gradient(180deg, rgba(129, 140, 248, 0.22), rgba(129, 140, 248, 0.04));
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 12px;
+  padding: 10px 14px;
+  background: #0a0a0a;
+  border-bottom: 1px solid #333333;
   cursor: grab;
   flex: 0 0 auto;
 }
 #acp-widget .acp-head:active { cursor: grabbing; }
+
 #acp-widget .acp-logo {
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  background: linear-gradient(135deg, rgba(129, 140, 248, 0.5), rgba(52, 211, 153, 0.3));
-  border: 1px solid rgba(129, 140, 248, 0.5);
-  color: #c7d2fe;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: #ededed;
+  color: #000;
   display: grid;
   place-items: center;
   font-weight: 600;
   font-size: 11px;
 }
-#acp-widget .acp-title { flex: 0 0 auto; font-weight: 600; letter-spacing: -0.01em; font-size: 12.5px; }
+#acp-widget .acp-title { flex: 0 0 auto; font-weight: 500; font-size: 13px; color: #ededed; }
 #acp-widget .acp-cycle {
   flex: 1 1 auto;
   text-align: right;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.55);
-  letter-spacing: 0.04em;
+  font-family: "Geist Mono", "Fira Code", monospace;
+  font-size: 12px;
+  color: #a1a1aa;
 }
-#acp-widget .acp-cycle .cyc-num { color: #c7d2fe; }
-#acp-widget .acp-cycle .cyc-sep { margin: 0 5px; opacity: 0.4; }
-#acp-widget .acp-cycle .cyc-rem { color: #fde68a; }
+#acp-widget .acp-cycle .cyc-num { color: #ededed; }
+#acp-widget .acp-cycle .cyc-sep { margin: 0 6px; opacity: 0.3; }
+#acp-widget .acp-cycle .cyc-rem { color: #888; }
 
 #acp-widget .acp-actions { display: flex; gap: 4px; flex: 0 0 auto; }
 #acp-widget .acp-icon-btn {
   background: transparent;
-  border: 1px solid transparent;
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 12px;
+  border: none;
+  color: #888;
+  font-size: 14px;
   width: 24px;
-  height: 22px;
+  height: 24px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
-  line-height: 1;
+  transition: all 0.15s ease;
 }
-#acp-widget .acp-icon-btn:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.1);
-}
+#acp-widget .acp-icon-btn:hover { color: #ededed; background: #222; }
 
-#acp-widget .acp-body { padding: 12px; display: flex; flex-direction: column; gap: 10px; user-select: text; flex: 1 1 auto; min-height: 0; }
+#acp-widget .acp-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; user-select: text; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 #acp-widget .acp-body-full { padding: 0; }
 #acp-widget[data-mode="compact"] .acp-body-full { display: none; }
 #acp-widget[data-mode="full"] .acp-body-compact { display: none; }
-#acp-widget #acp-iframe {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  background: #050507;
-  display: block;
-}
+
+#acp-widget #acp-iframe { width: 100%; height: 100%; border: 0; background: transparent; display: block; }
 
 #acp-widget .acp-row { display: flex; gap: 8px; align-items: center; }
 #acp-widget .acp-row input {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #f4f4f5;
-  font: inherit;
-  font-size: 12px;
-  font-family: ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, monospace;
+  background: #0a0a0a;
+  border: 1px solid #333;
+  color: #ededed;
+  font-family: "Geist Mono", "Fira Code", monospace;
+  font-size: 13px;
   text-transform: uppercase;
-  padding: 6px 8px;
-  border-radius: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
   width: 100%;
-  letter-spacing: 0.05em;
   outline: none;
+  transition: border-color 0.15s ease;
 }
-#acp-widget .acp-row input:focus { border-color: rgba(129, 140, 248, 0.5); }
-#acp-widget .acp-arrow { color: rgba(255, 255, 255, 0.4); font-size: 14px; }
+#acp-widget .acp-row input:focus { border-color: #ededed; }
+#acp-widget .acp-arrow { color: #666; font-size: 12px; }
 
 #acp-widget .acp-go {
-  background: linear-gradient(180deg, rgba(129, 140, 248, 0.32), rgba(129, 140, 248, 0.18));
-  border: 1px solid rgba(129, 140, 248, 0.55);
-  color: #c7d2fe;
-  font: inherit;
-  font-weight: 600;
-  font-size: 12px;
-  padding: 7px 10px;
-  border-radius: 8px;
+  background: #ededed;
+  border: 1px solid #ededed;
+  color: #000;
+  font-family: "Geist", "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 6px;
   cursor: pointer;
   width: 100%;
+  transition: all 0.15s ease;
 }
-#acp-widget .acp-go:hover { background: rgba(129, 140, 248, 0.34); }
-#acp-widget .acp-go:disabled { opacity: 0.55; cursor: not-allowed; }
-#acp-widget .acp-go-secondary { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.1); color: #f4f4f5; font-weight: 500; }
-#acp-widget .acp-go-secondary:hover { background: rgba(255, 255, 255, 0.08); }
+#acp-widget .acp-go:hover { background: #fff; border-color: #fff; }
+#acp-widget .acp-go:active { transform: scale(0.98); }
+#acp-widget .acp-go:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+#acp-widget .acp-go-secondary {
+  background: #0a0a0a;
+  border: 1px solid #333;
+  color: #ededed;
+}
+#acp-widget .acp-go-secondary:hover { background: #1a1a1a; border-color: #444; }
 
 #acp-widget .acp-score {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  font-family: ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, monospace;
+  padding: 12px;
+  background: #0a0a0a;
+  border: 1px solid #333;
+  border-radius: 6px;
 }
-#acp-widget .acp-score .label { font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5); }
-#acp-widget .acp-score .num { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
-#acp-widget .acp-score.opt-excellent .num { color: #6ee7b7; }
-#acp-widget .acp-score.opt-good      .num { color: #86efac; }
-#acp-widget .acp-score.opt-ok        .num { color: #fde68a; }
-#acp-widget .acp-score.opt-weak      .num { color: #fdba74; }
-#acp-widget .acp-score.opt-bad       .num { color: #fda4af; }
+#acp-widget .acp-score .label { font-size: 11px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+#acp-widget .acp-score .num { font-size: 24px; font-weight: 600; font-family: "Geist Mono", "Fira Code", monospace; }
+
+/* Vercel prefers more muted, solid colors for status */
+#acp-widget .acp-score.opt-excellent .num { color: #34d399; }
+#acp-widget .acp-score.opt-good      .num { color: #6ee7b7; }
+#acp-widget .acp-score.opt-ok        .num { color: #fde047; }
+#acp-widget .acp-score.opt-weak      .num { color: #fb923c; }
+#acp-widget .acp-score.opt-bad       .num { color: #f87171; }
 
 #acp-widget .acp-kv {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 3px 12px;
-  font-size: 11.5px;
-  font-family: ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, monospace;
+  gap: 6px 12px;
+  font-size: 12px;
+  font-family: "Geist Mono", "Fira Code", monospace;
+  padding: 0 4px;
 }
-#acp-widget .acp-kv .k { color: rgba(255, 255, 255, 0.55); }
-#acp-widget .acp-kv .v { color: #f4f4f5; text-align: right; }
+#acp-widget .acp-kv .k { color: #888; }
+#acp-widget .acp-kv .v { color: #ededed; text-align: right; }
 
-#acp-widget .acp-factors { display: flex; flex-direction: column; gap: 5px; }
+#acp-widget .acp-factors { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding: 0 4px; }
 #acp-widget .acp-factor { display: flex; align-items: center; gap: 8px; font-size: 11px; }
-#acp-widget .acp-factor .name { width: 78px; color: rgba(255, 255, 255, 0.65); text-transform: capitalize; }
-#acp-widget .acp-factor .bar { flex: 1 1 auto; height: 5px; background: rgba(255, 255, 255, 0.08); border-radius: 999px; overflow: hidden; }
-#acp-widget .acp-factor .bar .fill { height: 100%; background: linear-gradient(90deg, #818cf8, #a5b4fc); }
-#acp-widget .acp-factor .val { width: 32px; text-align: right; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #d4d4d8; font-size: 10.5px; }
+#acp-widget .acp-factor .name { width: 75px; color: #888; text-transform: capitalize; }
+#acp-widget .acp-factor .bar { flex: 1 1 auto; height: 4px; background: #222; border-radius: 2px; overflow: hidden; }
+#acp-widget .acp-factor .bar .fill { height: 100%; background: #ededed; border-radius: 2px; }
+#acp-widget .acp-factor .val { width: 32px; text-align: right; font-family: "Geist Mono", "Fira Code", monospace; color: #ededed; font-size: 11px; }
 
-#acp-widget .acp-empty { color: rgba(255, 255, 255, 0.55); font-size: 11.5px; padding: 6px 0; }
-#acp-widget .acp-err { color: #fda4af; font-size: 11.5px; }
+#acp-widget .acp-empty { color: #888; font-size: 12px; padding: 12px 0; text-align: center; }
+#acp-widget .acp-err { color: #f87171; font-size: 12px; padding: 10px; background: rgba(248, 113, 113, 0.1); border-radius: 6px; border: 1px solid rgba(248, 113, 113, 0.2); text-align: center; }
 
 #acp-widget .acp-whatif {
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding-top: 8px;
-  margin-top: 4px;
+  border-top: 1px solid #333;
+  padding-top: 12px;
+  margin-top: 8px;
 }
 #acp-widget .acp-whatif > summary {
   cursor: pointer;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.75);
-  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #ededed;
+  margin-bottom: 10px;
   list-style: none;
+  display: flex;
+  align-items: center;
 }
 #acp-widget .acp-whatif > summary::-webkit-details-marker { display: none; }
 #acp-widget .acp-whatif > summary::before {
-  content: "▸";
+  content: "›";
   display: inline-block;
-  margin-right: 6px;
-  color: rgba(255, 255, 255, 0.4);
-  transition: transform 120ms ease;
+  margin-right: 8px;
+  color: #888;
+  font-size: 14px;
+  line-height: 1;
+  transition: transform 0.15s ease;
 }
 #acp-widget .acp-whatif[open] > summary::before { transform: rotate(90deg); }
-#acp-widget .acp-whatif-grid { display: grid; gap: 6px; margin-bottom: 8px; }
+#acp-widget .acp-whatif-grid { display: grid; gap: 8px; margin-bottom: 12px; }
 #acp-widget .acp-whatif-grid label {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.65);
-  gap: 8px;
-}
-#acp-widget .acp-whatif-grid label > span {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: rgba(255, 255, 255, 0.5);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: #888;
 }
 #acp-widget .acp-whatif-grid input {
-  width: 86px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #f4f4f5;
-  font: inherit;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11.5px;
-  padding: 4px 6px;
-  border-radius: 6px;
+  width: 80px;
+  background: #0a0a0a;
+  border: 1px solid #333;
+  color: #ededed;
+  font-family: "Geist Mono", "Fira Code", monospace;
+  font-size: 12px;
+  padding: 6px;
+  border-radius: 4px;
   outline: none;
   text-align: right;
+  transition: border-color 0.15s ease;
 }
-#acp-widget .acp-whatif-grid input:focus { border-color: rgba(129, 140, 248, 0.5); }
+#acp-widget .acp-whatif-grid input:focus { border-color: #ededed; }
 
 /* minimized pill */
 #acp-pill {
   position: fixed;
-  bottom: 16px;
-  right: 16px;
+  bottom: 24px;
+  right: 24px;
   z-index: 2147483646;
-  background: linear-gradient(180deg, rgba(129, 140, 248, 0.32), rgba(129, 140, 248, 0.18));
-  border: 1px solid rgba(129, 140, 248, 0.6);
-  color: #c7d2fe;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, sans-serif;
-  font-weight: 600;
-  font-size: 12px;
-  padding: 8px 12px;
+  background: #000;
+  border: 1px solid #333;
+  color: #ededed;
+  font-family: "Geist", "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  padding: 8px 14px;
   border-radius: 999px;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   gap: 8px;
   user-select: none;
+  transition: all 0.15s ease;
 }
 #acp-pill.hidden { display: none !important; }
-#acp-pill .dot { width: 6px; height: 6px; border-radius: 999px; background: #818cf8; box-shadow: 0 0 6px #818cf8; }
-#acp-pill:hover { filter: brightness(1.15); }
+#acp-pill .dot { width: 6px; height: 6px; border-radius: 999px; background: #ededed; }
+#acp-pill:hover { background: #111; border-color: #444; }
 
 /* in-game inline badge */
 .acp-link-badge {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 10px 0;
-  padding: 10px 12px;
-  border-radius: 10px;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, sans-serif;
-  font-size: 12.5px;
-  font-weight: 500;
-  border: 1px solid rgba(129, 140, 248, 0.5);
-  background: linear-gradient(180deg, rgba(129, 140, 248, 0.22), rgba(129, 140, 248, 0.08));
-  color: #e0e7ff;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-family: "Geist", "Inter", sans-serif;
+  font-size: 13px;
+  border: 1px solid #333;
+  background: #0a0a0a;
+  color: #ededed;
   cursor: pointer;
-  letter-spacing: -0.01em;
-  transition: filter 120ms ease, transform 120ms ease;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+  transition: all 0.15s ease;
   width: 100%;
   box-sizing: border-box;
 }
-.acp-link-badge:hover { filter: brightness(1.18); transform: translateY(-1px); }
-.acp-link-badge .acp-bdg-pct { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; font-size: 18px; min-width: 52px; text-align: center; }
-.acp-link-badge .acp-bdg-label { font-weight: 600; }
-.acp-link-badge .acp-bdg-mini { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; color: rgba(255, 255, 255, 0.75); flex: 1 1 auto; }
-.acp-link-badge .acp-bdg-cta { font-weight: 600; color: rgba(255, 255, 255, 0.85); }
-.acp-link-badge.opt-excellent { color: #d1fae5; border-color: rgba(52, 211, 153, 0.6); background: rgba(52, 211, 153, 0.18); }
-.acp-link-badge.opt-good      { color: #bbf7d0; border-color: rgba(34, 197, 94, 0.55); background: rgba(34, 197, 94, 0.14); }
-.acp-link-badge.opt-ok        { color: #fde68a; border-color: rgba(251, 191, 36, 0.55); background: rgba(251, 191, 36, 0.14); }
-.acp-link-badge.opt-weak      { color: #fdba74; border-color: rgba(249, 115, 22, 0.55); background: rgba(249, 115, 22, 0.14); }
-.acp-link-badge.opt-bad       { color: #fecaca; border-color: rgba(248, 113, 113, 0.55); background: rgba(248, 113, 113, 0.14); }
+.acp-link-badge:hover { background: #111; border-color: #444; }
+.acp-link-badge .acp-bdg-pct { font-family: "Geist Mono", "Fira Code", monospace; font-weight: 600; font-size: 16px; min-width: 48px; text-align: center; }
+.acp-link-badge .acp-bdg-label { font-weight: 500; color: #a1a1aa; }
+.acp-link-badge .acp-bdg-mini { font-family: "Geist Mono", "Fira Code", monospace; font-size: 11px; color: #888; flex: 1 1 auto; margin-left: 8px;}
+.acp-link-badge .acp-bdg-cta { font-weight: 500; color: #ededed; }
+
+/* status colors for badge */
+.acp-link-badge.opt-excellent { border-color: rgba(52, 211, 153, 0.4); }
+.acp-link-badge.opt-good      { border-color: rgba(110, 231, 183, 0.3); }
+.acp-link-badge.opt-ok        { border-color: rgba(253, 224, 71, 0.3); }
+.acp-link-badge.opt-weak      { border-color: rgba(251, 146, 60, 0.3); }
+.acp-link-badge.opt-bad       { border-color: rgba(248, 113, 113, 0.3); }
+.acp-link-badge.opt-excellent .acp-bdg-pct { color: #34d399; }
+.acp-link-badge.opt-good .acp-bdg-pct      { color: #6ee7b7; }
+.acp-link-badge.opt-ok .acp-bdg-pct        { color: #fde047; }
+.acp-link-badge.opt-weak .acp-bdg-pct      { color: #fb923c; }
+.acp-link-badge.opt-bad .acp-bdg-pct       { color: #f87171; }

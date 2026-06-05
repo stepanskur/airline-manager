@@ -78,6 +78,7 @@
       let fromId = null, toId = null;
       let fromCity = null, toCity = null;
       let distance = null, ft = null;
+      let model = null;
       if (info && typeof info === "object") {
         fromIata = info.fromAirportCode || null;
         toIata = info.toAirportCode || null;
@@ -88,6 +89,12 @@
         distance = info.distance || null;
         ft = info.flightType || null;
       }
+      
+      const modelSelect = document.getElementById("planLinkModelSelect");
+      if (modelSelect && modelSelect.value) {
+        model = Number(modelSelect.value);
+      }
+
       // Fallback to hidden inputs (they hold airport ids while planLinkInfo
       // is still being constructed).
       if (!fromId) {
@@ -99,7 +106,7 @@
         if (v) toId = Number(v);
       }
       if (!fromIata || !toIata) return null;
-      return { fromIata, toIata, fromCity, toCity, fromId, toId, distance, flightType: ft };
+      return { fromIata, toIata, fromCity, toCity, fromId, toId, distance, flightType: ft, model };
     } catch (e) { return null; }
   }
 
@@ -107,7 +114,7 @@
     let lastSig = null;
     const tick = () => {
       const snap = readPlanLink();
-      const sig = snap ? `${snap.fromIata}|${snap.toIata}` : "(closed)";
+      const sig = snap ? `${snap.fromIata}|${snap.toIata}|${snap.model}` : "(closed)";
       if (sig !== lastSig) {
         lastSig = sig;
         window.postMessage({

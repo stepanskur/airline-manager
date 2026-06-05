@@ -19,6 +19,8 @@ const ui = {
     onlyOwnedFleet: false,
     minOptimality: 0,
     minScore: 0,
+    maxPlanes: 0,
+    minRev: 0,
     query: "",
     expanded: new Set(), // route signatures the user has expanded
     rendered: false,     // whether the panel chrome is already mounted
@@ -301,8 +303,10 @@ function renderRoutes(forceMount = false) {
         <label class="toggle"><input type="checkbox" id="filterProfit" /> Only profitable</label>
         <label class="toggle"><input type="checkbox" id="filterUnderserved" /> Only underserved</label>
         <label class="toggle"><input type="checkbox" id="filterOwned" /> Only owned fleet</label>
-        <input id="filterMinOpt" type="number" placeholder="Min Optimality %" min="0" max="100" />
-        <input id="filterMinScore" type="number" placeholder="Min score $/wk" />
+        <input id="filterMinOpt" type="number" placeholder="Min Opt %" min="0" max="100" />
+        <input id="filterMinScore" type="number" placeholder="Min profit/wk" />
+        <input id="filterMaxPlanes" type="number" placeholder="Max planes" title="Max planes to use" min="1" />
+        <input id="filterMinRev" type="number" placeholder="Min revenue" title="Min revenue/wk" />
         <input id="filterIata" type="text" placeholder="IATA / city filter" />
         <span id="rfMatchCount" class="card-sub" style="margin-left:auto"></span>
       </div>
@@ -337,6 +341,8 @@ function renderRoutes(forceMount = false) {
     $("#filterOwned").checked = ui.routes.onlyOwnedFleet;
     if (ui.routes.minOptimality > 0) $("#filterMinOpt").value = ui.routes.minOptimality;
     if (ui.routes.minScore > 0) $("#filterMinScore").value = ui.routes.minScore;
+    if (ui.routes.maxPlanes > 0) $("#filterMaxPlanes").value = ui.routes.maxPlanes;
+    if (ui.routes.minRev > 0) $("#filterMinRev").value = ui.routes.minRev;
     if (ui.routes.query) $("#filterIata").value = ui.routes.query;
 
     $("#rfRun").addEventListener("click", async () => {
@@ -357,6 +363,8 @@ function renderRoutes(forceMount = false) {
     bindFilter("filterOwned", "onlyOwnedFleet", () => $("#filterOwned").checked);
     bindFilter("filterMinOpt", "minOptimality", () => Number($("#filterMinOpt").value) || 0);
     bindFilter("filterMinScore", "minScore", () => Number($("#filterMinScore").value) || 0);
+    bindFilter("filterMaxPlanes", "maxPlanes", () => Number($("#filterMaxPlanes").value) || 0);
+    bindFilter("filterMinRev", "minRev", () => Number($("#filterMinRev").value) || 0);
     bindFilter("filterIata", "query", () => ($("#filterIata").value || "").trim().toLowerCase());
   }
 
@@ -401,7 +409,9 @@ function applyRouteFilters() {
     if (ui.routes.onlyUnder && row.freeDemand <= 0) return false;
     if (ui.routes.onlyOwnedFleet && row.suggestedModel.fitNote !== "owned") return false;
     if ((row.optimality ?? 0) < ui.routes.minOptimality) return false;
-    if ((row.score ?? 0) < ui.routes.minScore) return false;
+    if ((row.profitPerWeek ?? 0) < ui.routes.minScore) return false;
+    if (ui.routes.maxPlanes > 0 && row.planesNeeded > ui.routes.maxPlanes) return false;
+    if (ui.routes.minRev > 0 && row.revenue < ui.routes.minRev) return false;
     if (q) {
       const blob = `${row.fromAirport.iata} ${row.fromAirport.city} ${row.toAirport.iata} ${row.toAirport.city} ${row.fromAirport.country} ${row.toAirport.country}`.toLowerCase();
       if (!blob.includes(q)) return false;
@@ -458,18 +468,21 @@ function applyRouteFilters() {
 
 function routeDetailHTML(row, session) {
   const b = row.optimalityBreakdown || {};
+  const c = row.opCostBreakdown || {};
+  
   const factor = (label, value) => `
     <div class="factor">
       <div class="factor-bar"><div class="factor-bar-fill" style="width:${value}%"></div></div>
       <div class="factor-label">${label}<span class="factor-val">${value}%</span></div>
     </div>
   `;
+  
   const origin = (session?.origin || "https://www.airline-club.com");
   return `
     <tr class="route-detail">
       <td colspan="11">
         <div class="route-detail-inner">
-          <div class="grid grid-2" style="gap:14px">
+          <div class="grid grid-3" style="gap:14px">
             <div>
               <div class="card-title">Optimality breakdown — ${row.optimality}%</div>
               ${factor("Profit",       b.profit       ?? 0)}
@@ -479,6 +492,18 @@ function routeDetailHTML(row, session) {
               ${factor("Fleet fit",    b.fleetFit     ?? 0)}
               ${factor("Distance",     b.distance     ?? 0)}
               ${factor("Runway",       b.runway       ?? 0)}
+            </div>
+            <div>
+              <div class="card-title">Operating Costs / wk</div>
+              <div class="kv">
+                <span>Fuel</span><b class="stat-bad">${fmtMoney((row.weeklyOpCost || 0) * ((c.fuel || 0) / Math.max(1, row.weeklyOpCost / row.maxFrequency)) || 0)}</b>
+                <span>Crew</span><b class="stat-bad">${fmtMoney((row.weeklyOpCost || 0) * ((c.crew || 0) / Math.max(1, row.weeklyOpCost / row.maxFrequency)) || 0)}</b>
+                <span>Airport fees</span><b class="stat-bad">${fmtMoney((row.weeklyOpCost || 0) * ((c.airport || 0) / Math.max(1, row.weeklyOpCost / row.maxFrequency)) || 0)}</b>
+                <span>Inflight</span><b class="stat-bad">${fmtMoney((row.weeklyOpCost || 0) * ((c.inflight || 0) / Math.max(1, row.weeklyOpCost / row.maxFrequency)) || 0)}</b>
+                <span>Lounge</span><b class="stat-bad">${fmtMoney((row.weeklyOpCost || 0) * ((c.lounge || 0) / Math.max(1, row.weeklyOpCost / row.maxFrequency)) || 0)}</b>
+                <span>Maintenance</span><b class="stat-bad">${fmtMoney((row.weeklyOpCost || 0) * ((c.maintenance || 0) / Math.max(1, row.weeklyOpCost / row.maxFrequency)) || 0)}</b>
+                <span>Depreciation</span><b class="stat-bad">${fmtMoney((row.weeklyOpCost || 0) * ((c.depreciation || 0) / Math.max(1, row.weeklyOpCost / row.maxFrequency)) || 0)}</b>
+              </div>
             </div>
             <div>
               <div class="card-title">Numbers</div>
@@ -491,7 +516,7 @@ function routeDetailHTML(row, session) {
                 <span>Aircraft</span><b>${escape(row.suggestedModel.name)} (${row.suggestedModel.range} km)</b>
                 <span>Max freq / plane</span><b>${row.maxFrequency}×/wk</b>
                 <span>Planes needed</span><b>${row.planesNeeded}</b>
-                <span>Ticket price</span><b>${fmtMoney(row.myPrice)} (economy)</b>
+                <span>Ticket price</span><b>${priceTriplet(row.priceByClass)}</b>
                 <span>Revenue / wk</span><b class="stat-good">${fmtMoney(row.revenue)}</b>
                 <span>Op cost / wk</span><b class="stat-bad">${fmtMoney(row.weeklyOpCost)}</b>
                 <span>Profit / wk</span><b class="${row.profitPerWeek > 0 ? "stat-good" : "stat-bad"}">${fmtMoney(row.profitPerWeek)}</b>

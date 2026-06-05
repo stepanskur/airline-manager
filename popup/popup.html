@@ -7,40 +7,37 @@
 </head>
 <body>
   <div class="app">
-    <aside class="sidebar">
+    <header class="navbar">
       <div class="brand">
         <div class="brand-mark">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M10.5 21l-1.5-6-5.5-2 1-2 6 1 4-4-4-7 2-1 7 4 4-4 2 2-4 4 4 7-1 2-7-4-4 4 1 6-2 1z"/>
           </svg>
         </div>
         <div class="brand-text">
           <div class="brand-title">Co-Pilot</div>
-          <div class="brand-sub">airline-club</div>
         </div>
       </div>
       <nav class="tabs" id="tabs">
-        <button class="tab" data-tab="overview"><span class="tab-icon" data-icon="overview"></span><span class="tab-label">Overview</span></button>
-        <button class="tab" data-tab="routes"><span class="tab-icon" data-icon="routes"></span><span class="tab-label">Routes</span><span class="tab-badge hidden" data-badge="routes"></span></button>
-        <button class="tab" data-tab="insights"><span class="tab-icon" data-icon="insights"></span><span class="tab-label">Insights</span><span class="tab-badge hidden" data-badge="insights"></span></button>
-        <button class="tab" data-tab="oil"><span class="tab-icon" data-icon="oil"></span><span class="tab-label">Oil</span></button>
-        <button class="tab" data-tab="rivals"><span class="tab-icon" data-icon="rivals"></span><span class="tab-label">Rivals</span><span class="tab-badge hidden" data-badge="rivals"></span></button>
-        <button class="tab" data-tab="fleet"><span class="tab-icon" data-icon="fleet"></span><span class="tab-label">Fleet</span></button>
-        <button class="tab" data-tab="loans"><span class="tab-icon" data-icon="loans"></span><span class="tab-label">Loans</span></button>
-        <button class="tab" data-tab="alerts"><span class="tab-icon" data-icon="alerts"></span><span class="tab-label">Alerts</span><span class="tab-badge hidden" data-badge="alerts"></span></button>
-        <button class="tab" data-tab="settings"><span class="tab-icon" data-icon="settings"></span><span class="tab-label">Settings</span></button>
+        <button class="tab" data-tab="overview"><span class="tab-label">Overview</span></button>
+        <button class="tab" data-tab="routes"><span class="tab-label">Routes</span><span class="tab-badge hidden" data-badge="routes"></span></button>
+        <button class="tab" data-tab="insights"><span class="tab-label">Insights</span><span class="tab-badge hidden" data-badge="insights"></span></button>
+        <button class="tab" data-tab="oil"><span class="tab-label">Fuel</span></button>
+        <button class="tab" data-tab="rivals"><span class="tab-label">Rivals</span><span class="tab-badge hidden" data-badge="rivals"></span></button>
+        <button class="tab" data-tab="fleet"><span class="tab-label">Fleet</span></button>
+        <button class="tab" data-tab="loans"><span class="tab-label">Loans</span></button>
+        <button class="tab" data-tab="alerts"><span class="tab-label">Alerts</span><span class="tab-badge hidden" data-badge="alerts"></span></button>
+        <button class="tab" data-tab="settings"><span class="tab-label">Settings</span></button>
       </nav>
-      <div class="sidebar-footer">
+      <div class="nav-actions">
         <button id="refreshAll" class="ghost-button" title="Refresh all watchers now">
-          <span data-icon="refresh"></span>
-          Refresh
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
         </button>
-        <div class="version">v0.2.0</div>
       </div>
-    </aside>
+    </header>
 
     <main class="content">
-      <header class="topbar">
+      <div class="topbar">
         <div class="session" id="session">
           <div class="session-name" id="sessionName">No airline detected</div>
           <div class="session-meta" id="sessionMeta">Open airline-club.com after login to sync.</div>
@@ -53,7 +50,7 @@
           </div>
           <div class="cycle-progress"><div class="cycle-progress-bar" id="cycleProgress"></div></div>
         </div>
-      </header>
+      </div>
 
       <section class="panel" data-panel="overview"></section>
       <section class="panel hidden" data-panel="routes"></section>

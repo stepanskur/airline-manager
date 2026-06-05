@@ -246,15 +246,21 @@ function rivalsRules(rivals, profitRows, settings) {
   return out;
 }
 
-function oilRules(oil) {
+function oilRules(oil, profit) {
   const out = [];
   if (!oil) return out;
+  
+  const fuelCost = profit?.totals?.fuelCost || 0;
+  const barrelsPerWeek = oil.latestPrice ? fuelCost / oil.latestPrice : 0;
+  const contractVolume = Math.round(barrelsPerWeek * 1.05);
+  const volStr = contractVolume > 0 ? ` for ~${contractVolume.toLocaleString("en-US")} barrels` : "";
+
   if (oil.deviationPct != null && oil.deviationPct <= -5) {
     out.push({
       kind: "contract_oil",
       priority: 4,
       title: `Lock an oil contract — current price ${oil.deviationPct.toFixed(1)}% below avg`,
-      detail: `Oil at $${oil.latestPrice?.toFixed(2)} (${oil.windowAvg?.toFixed(2) || "?"} avg). Sign a 26+ cycle contract to insulate fuel costs.`,
+      detail: `Oil at ${oil.latestPrice?.toFixed(2)} (${oil.windowAvg?.toFixed(2) || "?"} avg). Sign a 26+ cycle contract${volStr} to insulate fuel costs.`,
       impact: null,
     });
   }
@@ -428,7 +434,7 @@ export async function runInsights() {
   }
 
   for (const s of rivalsRules(rivals, linkRows, settings)) suggestions.push(s);
-  for (const s of oilRules(oil)) suggestions.push(s);
+  for (const s of oilRules(oil, profit)) suggestions.push(s);
   for (const s of loanRules(loans)) suggestions.push(s);
   for (const s of fleetRules(fleet, cycle?.cycle)) suggestions.push(s);
   for (const s of usedRules(used)) suggestions.push(s);

@@ -187,6 +187,15 @@
   root.querySelector('[data-action="close"]').addEventListener("click", closeWidget);
   pill.addEventListener("click", expand);
 
+  function priceTriplet(p) {
+    if (p == null) return "—";
+    if (typeof p === "number") return `${p}`;
+    const e = p.economy != null ? `${p.economy}` : "—";
+    const b = p.business != null ? `${p.business}` : "—";
+    const f = p.first != null ? `${p.first}` : "—";
+    return `<span style="font-family: monospace; font-size: 11px;"><span>${e}</span><span style="opacity:0.5;margin:0 2px">/</span><span>${b}</span><span style="opacity:0.5;margin:0 2px">/</span><span>${f}</span></span>`;
+  }
+
   // ---------- compact: score lookup ----------
   const fromInput = root.querySelector("#acp-from");
   const toInput = root.querySelector("#acp-to");
@@ -226,7 +235,7 @@
       return;
     }
     lastScore = r;
-    wiPriceEl.value = r.myPrice;
+    wiPriceEl.value = r.priceByClass?.economy ?? r.myPrice ?? 0;
     wiFreqEl.value = r.maxFrequency;
     renderResult(r);
     runWhatIf();
@@ -266,6 +275,7 @@
         <div class="k">Demand</div><div class="v">${r.demandSeats}/wk</div>
         <div class="k">Free demand</div><div class="v">${r.freeDemand}/wk</div>
         <div class="k">Competitors</div><div class="v">${r.rivalCount}</div>
+        <div class="k">Ticket price</div><div class="v">${priceTriplet(r.priceByClass)}</div>
         <div class="k">Profit / wk</div><div class="v" style="color:${(r.profitPerWeek || 0) >= 0 ? "#86efac" : "#fda4af"}">${fmtMoney(r.profitPerWeek)}</div>
       </div>
       <div class="acp-factors">
@@ -341,15 +351,15 @@
       lastAutoScored = "";
       return;
     }
-    const sig = `${detail.fromIata}|${detail.toIata}`;
+    const sig = `${detail.fromIata}|${detail.toIata}|${detail.model}`;
     if (sig === lastAutoScored) {
       // Re-inject in case the panel re-rendered without changing the pair.
-      injectInlineBadge(detail.fromIata, detail.toIata);
+      injectInlineBadge(detail.fromIata, detail.toIata, detail.model);
       return;
     }
     lastAutoScored = sig;
-    runScore({ fromIata: detail.fromIata, toIata: detail.toIata, autoSrc: true })
-      .then(() => injectInlineBadge(detail.fromIata, detail.toIata));
+    runScore({ fromIata: detail.fromIata, toIata: detail.toIata, model: detail.model, autoSrc: true })
+      .then(() => injectInlineBadge(detail.fromIata, detail.toIata, detail.model));
   });
 
   // ---------- in-game inline badge ----------
@@ -361,12 +371,12 @@
   let badgeMutex = Promise.resolve();
   let lastBadgeSig = "";
   let suppressObserver = false;
-  function injectInlineBadge(fromIata, toIata) {
-    const sig = `${fromIata}|${toIata}`;
-    badgeMutex = badgeMutex.then(() => _injectInlineBadge(fromIata, toIata, sig)).catch(() => {});
+  function injectInlineBadge(fromIata, toIata, model) {
+    const sig = `${fromIata}|${toIata}|${model}`;
+    badgeMutex = badgeMutex.then(() => _injectInlineBadge(fromIata, toIata, model, sig)).catch(() => {});
     return badgeMutex;
   }
-  async function _injectInlineBadge(fromIata, toIata, sig) {
+  async function _injectInlineBadge(fromIata, toIata, model, sig) {
     const container = findPlanLinkAnchor();
     if (!container) {
       // No panel visible — drop any stale badges and exit quietly.
@@ -378,7 +388,7 @@
     const existing = container.querySelector(".acp-link-badge");
     if (existing && existing.dataset.sig === sig) return;
 
-    const resp = await send({ type: "SCORE_ROUTE", fromIata, toIata });
+    const resp = await send({ type: "SCORE_ROUTE", fromIata, toIata, modelId: model });
     const r = resp?.result;
     if (!r?.ok) return;
 

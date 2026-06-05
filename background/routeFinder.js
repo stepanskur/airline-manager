@@ -161,14 +161,33 @@ function estimateOperatingCost(model, distance, oilPricePerBarrel) {
   const fuelCost = barrels * (Number(oilPricePerBarrel) || 60);
 
   const seats = Number(model.capacity) || 150;
-  const crew = seats * 18;
-  const airportFees = seats * 25 + distance * 0.4;
-  const inflight = seats * 6;
+  
+  // Adjusted to better match Patson's airline-club model:
+  const crewCost = seats * 20 + durationHr * 100;
+  const airportFees = seats * 30 + distance * 0.5;
+  const inflightCost = seats * 8;
+  // Lounge cost per premium passenger
+  const loungeCost = seats * 0.2 * 30; // assume 20% premium seats * $30/pax
+  
   const price = Number(model.price) || 50_000_000;
   const lifespan = Math.max(1, Number(model.lifespan) || 30 * 52);
-  const maintenance = price * 0.0001;
-  const depreciation = price / lifespan;
-  return Math.round(fuelCost + crew + airportFees + inflight + maintenance + depreciation);
+  const maintenanceCost = price * 0.00012;
+  const depreciationCost = price / lifespan;
+  
+  const totalCost = fuelCost + crewCost + airportFees + inflightCost + loungeCost + maintenanceCost + depreciationCost;
+  
+  return {
+    total: Math.round(totalCost),
+    breakdown: {
+      fuel: Math.round(fuelCost),
+      crew: Math.round(crewCost),
+      airport: Math.round(airportFees),
+      inflight: Math.round(inflightCost),
+      lounge: Math.round(loungeCost),
+      maintenance: Math.round(maintenanceCost),
+      depreciation: Math.round(depreciationCost)
+    }
+  };
 }
 
 function totalSeatsFromCapacity(cap) {
@@ -187,6 +206,7 @@ function clamp01(v) { return Math.max(0, Math.min(1, v)); }
 // adjusted for fleet ownership and market saturation.
 function computeOptimality({
   profitPerWeek,
+  revenue,
   loadFactor,
   freeDemand,
   demandSeats,
@@ -197,18 +217,23 @@ function computeOptimality({
   runway,
   model,
   fitNote, // "owned" or "buy"
+  flightType
 }) {
-  // Profit: linear 0..1 between $0 and $2M/wk. Negative profits map to 0,
-  // anything above $2M to 1. Below break-even we slope down below 0 to be
-  // clamped — making losses far more visible than the old sigmoid.
+  // Profit: evaluate using profit margin rather than absolute $2M target,
+  // so small planes/short routes aren't penalized. A 40% margin is excellent.
   let profitFactor;
   if (profitPerWeek <= 0) {
     // Map -$500k..0 → 0..0.15 so red routes are clearly weak, not "50/50".
     profitFactor = clamp01((profitPerWeek + 500_000) / 500_000) * 0.15;
   } else {
-    profitFactor = clamp01(profitPerWeek / 2_000_000);
-    // Bonus tier above $2M/wk so the very best routes can hit 1.0 cleanly.
-    profitFactor = Math.min(1, profitFactor);
+    if (revenue && revenue > 0) {
+      const margin = profitPerWeek / revenue;
+      profitFactor = clamp01(margin / 0.40);
+    } else {
+      // Fallback if revenue isn't passed
+      const targetProfit = model ? (model.capacity * 2000) : 1_000_000;
+      profitFactor = clamp01(profitPerWeek / targetProfit);
+    }
   }
 
   // Load factor: linear with a soft sweet spot around 85%.
@@ -271,6 +296,12 @@ function computeOptimality({
   // Ownership penalty/bonus: needing to buy a new plane is a big real-world
   // cost the rest of the model doesn't capture.
   if (fitNote === "buy") score -= 8;
+  
+  // Country relationships bonus: domestic routes have no visa hassle and are more reliable.
+  if (flightType?.includes("DOMESTIC")) score += 3;
+  else if (flightType?.includes("INTERNATIONAL")) score += 1;
+  else if (flightType?.includes("INTERCONTINENTAL")) score -= 2;
+
   // Strongly profitable + low competition deserves an extra nudge so the
   // very best routes really stand out instead of clustering at 70-80.
   if (profitPerWeek > 1_000_000 && saturation < 0.4) score += 4;
@@ -464,7 +495,9 @@ export async function runRouteFinder({ source = "manual" } = {}) {
       const captured = Math.min(capacityPerWeekOnePlane, freeDemand + competitionCap * 0.2);
       const loadFactor = capacityPerWeekOnePlane > 0 ? captured / capacityPerWeekOnePlane : 0;
 
-      const opCostPerFlight = estimateOperatingCost(model, distance, oilLatest);
+      const opCost = estimateOperatingCost(model, distance, oilLatest);
+      const opCostPerFlight = opCost.total;
+      const opCostBreakdown = opCost.breakdown;
       const weeklyOpCost = opCostPerFlight * maxFreqPerPlane;
       const revenue = captured * myPrice;
       const profitPerWeek = revenue - weeklyOpCost;
@@ -477,6 +510,7 @@ export async function runRouteFinder({ source = "manual" } = {}) {
       // Composite optimality score (0..100).
       const optimality = computeOptimality({
         profitPerWeek,
+        revenue,
         loadFactor,
         freeDemand,
         demandSeats,
@@ -487,6 +521,7 @@ export async function runRouteFinder({ source = "manual" } = {}) {
         runway: toAp.runwayLength,
         model,
         fitNote,
+        flightType: ft,
       });
 
       const score = Math.round(profitPerWeek * Math.max(0.1, loadFactor) - distance * 5);
@@ -507,7 +542,11 @@ export async function runRouteFinder({ source = "manual" } = {}) {
         competitionCap,
         freeDemand,
         rivalCount: rivalLinks.length,
-        myPrice,
+        priceByClass: {
+          economy: myPrice,
+          business: computeStandardPrice(distance, ft, LinkClass.BUSINESS),
+          first: computeStandardPrice(distance, ft, LinkClass.FIRST)
+        },
         suggestedModel: {
           id: model.id,
           name: model.name,
@@ -525,6 +564,7 @@ export async function runRouteFinder({ source = "manual" } = {}) {
         captured: Math.round(captured),
         revenue: Math.round(revenue),
         weeklyOpCost: Math.round(weeklyOpCost),
+        opCostBreakdown,
         profitPerWeek: Math.round(profitPerWeek),
         planesNeeded,
         optimality: optimality.score,
@@ -566,7 +606,7 @@ export async function runRouteFinder({ source = "manual" } = {}) {
 
 // Compute optimality for a single (from, to) on demand. Used by the in-page
 // widget when the user is planning a specific link.
-export async function scoreSingleRoute({ fromIata, toIata }) {
+export async function scoreSingleRoute({ fromIata, toIata, modelId }) {
   const id = await resolveAirlineId();
   if (!id) return { ok: false, error: "Not logged in" };
   const settings = await loadSettings();
@@ -594,13 +634,34 @@ export async function scoreSingleRoute({ fromIata, toIata }) {
   const rivalLinks = (research?.links || []).filter((l) => l.airlineId !== id);
   const competitionCap = rivalLinks.reduce((s, l) => s + totalSeatsFromCapacity(l.capacity), 0);
   const freeDemand = Math.max(0, demandSeats - competitionCap);
-  let best = chooseBestModelForDistance(fleetEntries, distance, to.runwayLength);
+  
   let model, ownedCount, fitNote;
-  if (best) { model = best.model; ownedCount = best.count; fitNote = "owned"; }
-  else {
-    const cat = chooseBestCatalogModelForDistance(allModels, distance, to.runwayLength);
-    if (!cat) return { ok: false, error: "No aircraft (owned or catalog) can fly this route." };
-    model = cat; ownedCount = 0; fitNote = "buy";
+  
+  // If modelId is provided, we try to use that specific model.
+  if (modelId) {
+    const specificModel = allModels.find(m => m.id === modelId);
+    if (specificModel) {
+      model = specificModel;
+      const ownedEntry = fleetEntries.find(e => e.model.id === modelId);
+      if (ownedEntry) {
+        ownedCount = ownedEntry.count;
+        fitNote = "owned";
+      } else {
+        ownedCount = 0;
+        fitNote = "buy";
+      }
+    }
+  }
+
+  // Fallback if no modelId or model wasn't found
+  if (!model) {
+    let best = chooseBestModelForDistance(fleetEntries, distance, to.runwayLength);
+    if (best) { model = best.model; ownedCount = best.count; fitNote = "owned"; }
+    else {
+      const cat = chooseBestCatalogModelForDistance(allModels, distance, to.runwayLength);
+      if (!cat) return { ok: false, error: "No aircraft (owned or catalog) can fly this route." };
+      model = cat; ownedCount = 0; fitNote = "buy";
+    }
   }
   const seatsPerFlight = Number(model.capacity) || 150;
   const maxFreqPerPlane = calculateMaxFrequency(model, distance) || 1;
@@ -608,19 +669,27 @@ export async function scoreSingleRoute({ fromIata, toIata }) {
   const captured = Math.min(capacityPerWeekOnePlane, freeDemand + competitionCap * 0.2);
   const loadFactor = capacityPerWeekOnePlane > 0 ? captured / capacityPerWeekOnePlane : 0;
   const myPrice = computeStandardPrice(distance, ft, LinkClass.ECONOMY);
-  const opCostPerFlight = estimateOperatingCost(model, distance, oilLatest);
+  const opCost = estimateOperatingCost(model, distance, oilLatest);
+  const opCostPerFlight = opCost.total;
+  const opCostBreakdown = opCost.breakdown;
   const weeklyOpCost = opCostPerFlight * maxFreqPerPlane;
-  const profitPerWeek = captured * myPrice - weeklyOpCost;
+  const revenue = captured * myPrice;
+  const profitPerWeek = revenue - weeklyOpCost;
   const optimality = computeOptimality({
-    profitPerWeek, loadFactor, freeDemand, demandSeats,
+    profitPerWeek, revenue, loadFactor, freeDemand, demandSeats,
     rivalCount: rivalLinks.length, competitionCap, capacityPerWeek: capacityPerWeekOnePlane,
-    distance, runway: to.runwayLength, model, fitNote,
+    distance, runway: to.runwayLength, model, fitNote, flightType: ft,
   });
   return {
     ok: true,
     fromIata: from.iata, toIata: to.iata,
     fromCity: from.city, toCity: to.city,
     distance, flightType: ft, demandSeats, freeDemand, rivalCount: rivalLinks.length,
+    priceByClass: {
+      economy: myPrice,
+      business: computeStandardPrice(distance, ft, LinkClass.BUSINESS),
+      first: computeStandardPrice(distance, ft, LinkClass.FIRST)
+    },
     suggestedModel: {
       id: model.id, name: model.name, capacity: seatsPerFlight,
       range: Number(model.range) || 0, runwayRequirement: Number(model.runwayRequirement) || 0,
@@ -630,6 +699,7 @@ export async function scoreSingleRoute({ fromIata, toIata }) {
     loadFactor,
     myPrice,
     weeklyOpCost: Math.round(weeklyOpCost),
+    opCostBreakdown,
     profitPerWeek: Math.round(profitPerWeek),
     optimality: optimality.score,
     optimalityBreakdown: optimality.breakdown,

@@ -132,7 +132,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           break;
         }
         case "SCORE_ROUTE": {
-          const result = await scoreSingleRoute({ fromIata: msg.fromIata, toIata: msg.toIata });
+          const result = await scoreSingleRoute({ fromIata: msg.fromIata, toIata: msg.toIata, modelId: msg.modelId });
           sendResponse({ ok: true, result });
           break;
         }
