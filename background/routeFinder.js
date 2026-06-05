@@ -217,7 +217,11 @@ function computeOptimality({
   runway,
   model,
   fitNote, // "owned" or "buy"
-  flightType
+  flightType,
+  compAvgPrice,
+  compAvgLF,
+  compAvgFreq,
+  relationship
 }) {
   // Profit: evaluate using profit margin rather than absolute $2M target,
   // so small planes/short routes aren't penalized. A 40% margin is excellent.
@@ -250,7 +254,14 @@ function computeOptimality({
   const saturation = competitionCap != null && demandSeats > 0
     ? clamp01(competitionCap / demandSeats)
     : Math.min(1, rivalCount * 0.25);
-  const competitionFactor = clamp01(1 - saturation * 0.75 - rivalCount * 0.04);
+  let competitionFactor = clamp01(1 - saturation * 0.75 - rivalCount * 0.04);
+  
+  if (rivalCount > 0) {
+    if (compAvgLF < 0.6) competitionFactor = clamp01(competitionFactor + 0.1);
+    else if (compAvgLF > 0.9) competitionFactor = clamp01(competitionFactor - 0.1);
+    if (compAvgFreq > 14) competitionFactor = clamp01(competitionFactor - 0.05);
+    else if (compAvgFreq < 5) competitionFactor = clamp01(competitionFactor + 0.05);
+  }
 
   // Fleet fit: how well our chosen plane matches the demand per week.
   // A perfect match is ~1, but very over-capacity → smaller plane preferred.
@@ -301,6 +312,19 @@ function computeOptimality({
   if (flightType?.includes("DOMESTIC")) score += 3;
   else if (flightType?.includes("INTERNATIONAL")) score += 1;
   else if (flightType?.includes("INTERCONTINENTAL")) score -= 2;
+
+  if (relationship != null) {
+     const val = typeof relationship === 'object' ? (relationship.value || relationship.level) : relationship;
+     const str = typeof relationship === 'object' ? (relationship.name || relationship.title || "") : String(relationship);
+     if (typeof val === 'number') {
+         if (val >= 3) score += 3;
+         else if (val <= 1) score -= 2;
+     } else if (typeof str === 'string') {
+         const sl = str.toLowerCase();
+         if (sl.includes('good') || sl.includes('excellent') || sl.includes('friendly') || sl.includes('alliance') || sl.includes('close')) score += 3;
+         else if (sl.includes('bad') || sl.includes('hostile') || sl.includes('cold') || sl.includes('poor')) score -= 2;
+     }
+  }
 
   // Strongly profitable + low competition deserves an extra nudge so the
   // very best routes really stand out instead of clustering at 70-80.
@@ -465,6 +489,25 @@ export async function runRouteFinder({ source = "manual" } = {}) {
       const rivalLinks = (r.links || []).filter((l) => l.airlineId !== id);
       const competitionCap = rivalLinks.reduce((s, l) => s + totalSeatsFromCapacity(l.capacity), 0);
       const freeDemand = Math.max(0, demandSeats - competitionCap);
+      
+      let compAvgPrice = 0, compAvgLF = 0, compAvgFreq = 0;
+      if (rivalLinks.length > 0) {
+        let totalPrice = 0, totalSold = 0, totalCap = 0, totalFreq = 0;
+        for (const l of rivalLinks) {
+           const cap = totalSeatsFromCapacity(l.capacity);
+           const sold = totalSeatsFromCapacity(l.soldSeats || l.passengers || 0);
+           const p = l.price && l.price.economy ? l.price.economy : 0;
+           totalPrice += p * cap;
+           totalSold += sold;
+           totalCap += cap;
+           totalFreq += (l.frequency || 0);
+        }
+        if (totalCap > 0) {
+          compAvgPrice = totalPrice / totalCap;
+          compAvgLF = totalSold / totalCap;
+        }
+        compAvgFreq = totalFreq / rivalLinks.length;
+      }
 
       // Pick best owned model.
       const best = chooseBestModelForDistance(fleetEntries, distance, toAp.runwayLength);
@@ -488,7 +531,17 @@ export async function runRouteFinder({ source = "manual" } = {}) {
       if (maxFreqPerPlane <= 0) continue;
       const flightMinutes = calculateFlightMinutesRequired(model, distance);
 
-      const myPrice = computeStandardPrice(distance, ft, LinkClass.ECONOMY);
+      let myPrice = computeStandardPrice(distance, ft, LinkClass.ECONOMY);
+      if (compAvgPrice > 0 && rivalLinks.length > 0) {
+          // If competitor price is less than standard price, match it or slightly undercut
+          if (compAvgPrice < myPrice) {
+             myPrice = Math.round(compAvgPrice * 0.98); // Undercut by 2%
+          } else {
+             // If competitor is higher, we can charge up to their price
+             myPrice = Math.min(Math.round(compAvgPrice * 0.98), myPrice * 1.2);
+          }
+      }
+
       const capacityPerWeekOnePlane = seatsPerFlight * maxFreqPerPlane;
 
       // Capture share: take all "free demand", plus a small share of rivals' demand.
@@ -499,6 +552,21 @@ export async function runRouteFinder({ source = "manual" } = {}) {
       const opCostPerFlight = opCost.total;
       const opCostBreakdown = opCost.breakdown;
       const weeklyOpCost = opCostPerFlight * maxFreqPerPlane;
+  
+  // Recommend Quality
+  let recommendedQuality = 50; // Default
+  if (distance < 1000) {
+     recommendedQuality = 30 + Math.floor(myPrice / 20); // Just heuristic
+  } else if (distance < 4000) {
+     recommendedQuality = 40 + Math.floor(myPrice / 40);
+  } else {
+     recommendedQuality = 60 + Math.floor(myPrice / 50);
+  }
+  // Cap at 100
+  recommendedQuality = Math.min(100, Math.max(10, recommendedQuality));
+  // Convert to stars roughly (1 star = 20 quality)
+  const qualityStars = Math.round(recommendedQuality / 20);
+
       const revenue = captured * myPrice;
       const profitPerWeek = revenue - weeklyOpCost;
       // Number of planes that would max-out free demand.
@@ -516,12 +584,16 @@ export async function runRouteFinder({ source = "manual" } = {}) {
         demandSeats,
         rivalCount: rivalLinks.length,
         competitionCap,
+        compAvgPrice,
+        compAvgLF,
+        compAvgFreq,
         capacityPerWeek: capacityPerWeekOnePlane,
         distance,
         runway: toAp.runwayLength,
         model,
         fitNote,
         flightType: ft,
+        relationship: r.relationship || r.mutualRelationship,
       });
 
       const score = Math.round(profitPerWeek * Math.max(0.1, loadFactor) - distance * 5);
@@ -570,6 +642,7 @@ export async function runRouteFinder({ source = "manual" } = {}) {
         optimality: optimality.score,
         optimalityBreakdown: optimality.breakdown,
         score,
+        quality: qualityStars,
       });
     }
 
@@ -635,6 +708,25 @@ export async function scoreSingleRoute({ fromIata, toIata, modelId }) {
   const competitionCap = rivalLinks.reduce((s, l) => s + totalSeatsFromCapacity(l.capacity), 0);
   const freeDemand = Math.max(0, demandSeats - competitionCap);
   
+  let compAvgPrice = 0, compAvgLF = 0, compAvgFreq = 0;
+  if (rivalLinks.length > 0) {
+    let totalPrice = 0, totalSold = 0, totalCap = 0, totalFreq = 0;
+    for (const l of rivalLinks) {
+       const cap = totalSeatsFromCapacity(l.capacity);
+       const sold = totalSeatsFromCapacity(l.soldSeats || l.passengers || 0);
+       const p = l.price && l.price.economy ? l.price.economy : 0;
+       totalPrice += p * cap;
+       totalSold += sold;
+       totalCap += cap;
+       totalFreq += (l.frequency || 0);
+    }
+    if (totalCap > 0) {
+      compAvgPrice = totalPrice / totalCap;
+      compAvgLF = totalSold / totalCap;
+    }
+    compAvgFreq = totalFreq / rivalLinks.length;
+  }
+  
   let model, ownedCount, fitNote;
   
   // If modelId is provided, we try to use that specific model.
@@ -668,7 +760,15 @@ export async function scoreSingleRoute({ fromIata, toIata, modelId }) {
   const capacityPerWeekOnePlane = seatsPerFlight * maxFreqPerPlane;
   const captured = Math.min(capacityPerWeekOnePlane, freeDemand + competitionCap * 0.2);
   const loadFactor = capacityPerWeekOnePlane > 0 ? captured / capacityPerWeekOnePlane : 0;
-  const myPrice = computeStandardPrice(distance, ft, LinkClass.ECONOMY);
+  let myPrice = computeStandardPrice(distance, ft, LinkClass.ECONOMY);
+  if (compAvgPrice > 0 && rivalLinks.length > 0) {
+      if (compAvgPrice < myPrice) {
+         myPrice = Math.round(compAvgPrice * 0.98);
+      } else {
+         myPrice = Math.min(Math.round(compAvgPrice * 0.98), myPrice * 1.2);
+      }
+  }
+
   const opCost = estimateOperatingCost(model, distance, oilLatest);
   const opCostPerFlight = opCost.total;
   const opCostBreakdown = opCost.breakdown;
@@ -677,9 +777,24 @@ export async function scoreSingleRoute({ fromIata, toIata, modelId }) {
   const profitPerWeek = revenue - weeklyOpCost;
   const optimality = computeOptimality({
     profitPerWeek, revenue, loadFactor, freeDemand, demandSeats,
-    rivalCount: rivalLinks.length, competitionCap, capacityPerWeek: capacityPerWeekOnePlane,
+    rivalCount: rivalLinks.length, competitionCap, compAvgPrice, compAvgLF, compAvgFreq,
+    capacityPerWeek: capacityPerWeekOnePlane,
     distance, runway: to.runwayLength, model, fitNote, flightType: ft,
+    relationship: research?.relationship || research?.mutualRelationship
   });
+
+  // Recommend Quality
+  let recommendedQuality = 50; // Default
+  if (distance < 1000) {
+     recommendedQuality = 30 + Math.floor(myPrice / 20); // Just heuristic
+  } else if (distance < 4000) {
+     recommendedQuality = 40 + Math.floor(myPrice / 40);
+  } else {
+     recommendedQuality = 60 + Math.floor(myPrice / 50);
+  }
+  recommendedQuality = Math.min(100, Math.max(10, recommendedQuality));
+  const qualityStars = Math.round(recommendedQuality / 20);
+
   return {
     ok: true,
     fromIata: from.iata, toIata: to.iata,
@@ -703,5 +818,6 @@ export async function scoreSingleRoute({ fromIata, toIata, modelId }) {
     profitPerWeek: Math.round(profitPerWeek),
     optimality: optimality.score,
     optimalityBreakdown: optimality.breakdown,
+    quality: qualityStars
   };
 }

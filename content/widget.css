@@ -250,6 +250,20 @@
 #acp-pill:hover { background: #111; border-color: #444; }
 
 /* in-game inline badge */
+@keyframes acp-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.acp-skeleton {
+  pointer-events: none;
+  background: linear-gradient(90deg, #0a0a0a 25%, #1a1a1a 50%, #0a0a0a 75%) !important;
+  background-size: 200% 100% !important;
+  animation: acp-shimmer 2s infinite linear;
+  border-color: #222 !important;
+}
+.acp-skeleton .acp-bdg-pct { color: #555 !important; }
+.acp-skeleton .acp-bdg-label { color: #666 !important; }
+
 .acp-link-badge {
   display: flex;
   align-items: center;

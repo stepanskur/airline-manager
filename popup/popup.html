@@ -4,11 +4,96 @@
   <meta charset="utf-8" />
   <title>AirlineClub Co-Pilot</title>
   <link rel="stylesheet" href="popup.css" />
+  <style>
+    /* Inline additions to support the new sidebar layout without changing external CSS */
+    .app-new {
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      background: var(--bg-base);
+    }
+    .sidebar {
+      width: 220px;
+      border-right: 1px solid var(--border);
+      background: var(--bg-elevated);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .sidebar-brand {
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 16px 12px;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .sidebar-nav .tab {
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      justify-content: flex-start;
+    }
+    .sidebar-nav .tab-badge {
+      margin-left: auto;
+    }
+    .main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .topbar-new {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-base);
+    }
+    .session-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .cycle-info {
+      text-align: right;
+    }
+    .grid-auto {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .page-title {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0 0 8px 0;
+    }
+    .page-desc {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin: 0;
+    }
+  </style>
 </head>
 <body>
-  <div class="app">
-    <header class="navbar">
-      <div class="brand">
+  <div class="app-new">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
         <div class="brand-mark">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M10.5 21l-1.5-6-5.5-2 1-2 6 1 4-4-4-7 2-1 7 4 4-4 2 2-4 4 4 7-1 2-7-4-4 4 1 6-2 1z"/>
@@ -16,49 +101,49 @@
         </div>
         <div class="brand-text">
           <div class="brand-title">Co-Pilot</div>
+          <div class="brand-sub">Airline Manager</div>
         </div>
       </div>
-      <nav class="tabs" id="tabs">
-        <button class="tab" data-tab="overview"><span class="tab-label">Overview</span></button>
-        <button class="tab" data-tab="routes"><span class="tab-label">Routes</span><span class="tab-badge hidden" data-badge="routes"></span></button>
-        <button class="tab" data-tab="insights"><span class="tab-label">Insights</span><span class="tab-badge hidden" data-badge="insights"></span></button>
-        <button class="tab" data-tab="oil"><span class="tab-label">Fuel</span></button>
-        <button class="tab" data-tab="rivals"><span class="tab-label">Rivals</span><span class="tab-badge hidden" data-badge="rivals"></span></button>
-        <button class="tab" data-tab="fleet"><span class="tab-label">Fleet</span></button>
-        <button class="tab" data-tab="loans"><span class="tab-label">Loans</span></button>
-        <button class="tab" data-tab="alerts"><span class="tab-label">Alerts</span><span class="tab-badge hidden" data-badge="alerts"></span></button>
-        <button class="tab" data-tab="settings"><span class="tab-label">Settings</span></button>
+      <nav class="sidebar-nav" id="tabs">
+        <button class="tab" data-tab="overview"><span class="tab-label">Dashboard</span></button>
+        <button class="tab" data-tab="routes"><span class="tab-label">Route Scanner</span><span class="tab-badge hidden" data-badge="routes"></span></button>
+        <button class="tab" data-tab="insights"><span class="tab-label">Smart Insights</span><span class="tab-badge hidden" data-badge="insights"></span></button>
+        <button class="tab" data-tab="fleet"><span class="tab-label">Fleet & Used</span></button>
+        <button class="tab" data-tab="rivals"><span class="tab-label">Competitors</span><span class="tab-badge hidden" data-badge="rivals"></span></button>
+        <button class="tab" data-tab="finance"><span class="tab-label">Finance & Fuel</span></button>
+        <button class="tab" data-tab="alerts"><span class="tab-label">System Alerts</span><span class="tab-badge hidden" data-badge="alerts"></span></button>
+        <div style="flex:1"></div>
+        <button class="tab" data-tab="settings"><span class="tab-label">Configuration</span></button>
       </nav>
-      <div class="nav-actions">
-        <button id="refreshAll" class="ghost-button" title="Refresh all watchers now">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-        </button>
-      </div>
-    </header>
+    </aside>
 
-    <main class="content">
-      <div class="topbar">
-        <div class="session" id="session">
-          <div class="session-name" id="sessionName">No airline detected</div>
-          <div class="session-meta" id="sessionMeta">Open airline-club.com after login to sync.</div>
+    <main class="main-area">
+      <header class="topbar-new">
+        <div class="session-info" id="session">
+          <div class="session-name" id="sessionName" style="font-size: 16px; font-weight: 600;">Loading...</div>
+          <div class="session-meta" id="sessionMeta">Connecting to game servers...</div>
         </div>
-        <div class="cycle" id="cycle">
-          <div class="cycle-label">Cycle</div>
-          <div class="cycle-value">
-            <span id="cycleNumber">—</span>
-            <span class="cycle-remaining" id="cycleRemaining">—</span>
+        <div class="cycle-info" id="cycle">
+          <div class="cycle-value" style="font-size: 16px;">
+            <span id="cycleNumber">Cycle —</span>
+            <span class="cycle-remaining" id="cycleRemaining" style="font-size: 13px;">—</span>
           </div>
-          <div class="cycle-progress"><div class="cycle-progress-bar" id="cycleProgress"></div></div>
+          <div class="cycle-progress" style="margin-top: 8px;"><div class="cycle-progress-bar" id="cycleProgress"></div></div>
         </div>
-      </div>
+        <div class="nav-actions">
+          <button id="refreshAll" class="ghost-button" title="Force sync data">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            Sync Data
+          </button>
+        </div>
+      </header>
 
       <section class="panel" data-panel="overview"></section>
       <section class="panel hidden" data-panel="routes"></section>
       <section class="panel hidden" data-panel="insights"></section>
-      <section class="panel hidden" data-panel="oil"></section>
-      <section class="panel hidden" data-panel="rivals"></section>
       <section class="panel hidden" data-panel="fleet"></section>
-      <section class="panel hidden" data-panel="loans"></section>
+      <section class="panel hidden" data-panel="rivals"></section>
+      <section class="panel hidden" data-panel="finance"></section>
       <section class="panel hidden" data-panel="alerts"></section>
       <section class="panel hidden" data-panel="settings"></section>
     </main>

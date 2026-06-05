@@ -76,14 +76,14 @@
     </div>
     <div class="acp-body acp-body-compact">
       <div class="acp-row">
-        <input id="acp-from" placeholder="FROM" maxlength="4" autocomplete="off" />
+        <input id="acp-from" placeholder="FROM" maxlength="4" autocomplete="off" style="text-align:center;" />
         <span class="acp-arrow">→</span>
-        <input id="acp-to" placeholder="TO" maxlength="4" autocomplete="off" />
+        <input id="acp-to" placeholder="TO" maxlength="4" autocomplete="off" style="text-align:center;" />
       </div>
-      <button class="acp-go" id="acp-go">Score route</button>
-      <div id="acp-result" class="acp-empty">Enter two IATA codes (e.g. ZRH → JFK), open a route in the game (we auto-detect), or click ⤢ to expand the full Co-Pilot.</div>
+      <button class="acp-go" id="acp-go">Calculate Route</button>
+      <div id="acp-result" class="acp-empty">Ready. Enter route or open one in-game.</div>
 
-      <details id="acp-whatif" class="acp-whatif">
+      <details id="acp-whatif" class="acp-whatif" open>
         <summary>What-if simulator</summary>
         <div class="acp-whatif-grid">
           <label>Ticket price <span title="If you set this, we estimate price elasticity">$<input id="acp-wi-price" type="number" min="0" /></span></label>
@@ -276,6 +276,7 @@
         <div class="k">Free demand</div><div class="v">${r.freeDemand}/wk</div>
         <div class="k">Competitors</div><div class="v">${r.rivalCount}</div>
         <div class="k">Ticket price</div><div class="v">${priceTriplet(r.priceByClass)}</div>
+        <div class="k">Quality</div><div class="v">${r.quality ? '⭐'.repeat(r.quality) : '★★★'}</div>
         <div class="k">Profit / wk</div><div class="v" style="color:${(r.profitPerWeek || 0) >= 0 ? "#86efac" : "#fda4af"}">${fmtMoney(r.profitPerWeek)}</div>
       </div>
       <div class="acp-factors">
@@ -310,7 +311,7 @@
     // Cost: roughly proportional to frequency.
     const costPerFreq = lastScore.weeklyOpCost / Math.max(1, lastScore.maxFrequency);
     const newCost = costPerFreq * newFreq;
-    const revenue = captured * newPrice;
+    const revenue = Math.max(0, captured * newPrice);
     const profit = revenue - newCost;
     const profitDelta = profit - (lastScore.profitPerWeek || 0);
     wiOutEl.innerHTML = `
@@ -387,6 +388,20 @@
     // If a fresh badge for the same pair is already present, do nothing.
     const existing = container.querySelector(".acp-link-badge");
     if (existing && existing.dataset.sig === sig) return;
+
+    // Inject skeleton immediately
+    suppressObserver = true;
+    try {
+      removeAllBadges();
+      const skel = document.createElement("div");
+      skel.className = "acp-link-badge acp-skeleton";
+      skel.dataset.sig = sig;
+      skel.innerHTML = '<span class="acp-bdg-pct">...</span><span class="acp-bdg-label">Analyzing route & competitors...</span>';
+      container.insertBefore(skel, container.firstChild);
+      lastBadgeSig = sig;
+    } finally {
+      setTimeout(() => { suppressObserver = false; }, 50);
+    }
 
     const resp = await send({ type: "SCORE_ROUTE", fromIata, toIata, modelId: model });
     const r = resp?.result;
